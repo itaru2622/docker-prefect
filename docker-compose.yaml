@@ -1,0 +1,41 @@
+#cf.  https://github.com/rpeden/prefect-docker-compose/blob/main/docker-compose.yml
+#
+volumes:
+  prefect:
+    name: prefect
+
+networks:
+  default:
+    name: prefect
+
+services:
+  prefect:
+#   image: prefecthq/prefect:3.0-python3.12
+    image: itaru2622/prefect:3.0-python3.12
+    container_name: prefect
+    build:
+      args:
+        - http_proxy=${http_proxy}
+        - https_proxy=${https_proxy}
+      context: .
+    ports:
+      - 4200:4200
+    entrypoint: ''
+    environment:
+      - TZ=${TZ:-GMT}
+      - PREFECT_API_URL=http://prefect:4200/api
+    command: prefect server start
+    volumes:
+      - prefect:/root/.prefect
+
+  worker:
+    image: itaru2622/prefect:3.0-python3.12
+    container_name: worker
+    entrypoint: ''
+    environment:
+      - TZ=${TZ:-GMT}
+      - PREFECT_API_URL=http://prefect:4200/api
+    command: bash -c "sleep 10 && prefect worker start --pool 'worker1' --type docker"
+#   command: tail -f /dev/null
+    depends_on:
+      - prefect
